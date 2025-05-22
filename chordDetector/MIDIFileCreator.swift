@@ -14,7 +14,7 @@ class MIDIFileCreator {
             .replacingOccurrences(of: "♭", with: "flat")
         let fileURL = tempDir.appendingPathComponent("\(fileName).mid")
         
-        let midiData = createMIDIData(for: notes)
+        let midiData = createMIDIData(for: notes, named: chordName)
         
         do {
             try midiData.write(to: fileURL)
@@ -25,7 +25,7 @@ class MIDIFileCreator {
         }
     }
     
-    private func createMIDIData(for notes: [Int]) -> Data {
+    private func createMIDIData(for notes: [Int], named chordName: String) -> Data {
         var data = Data()
         
         data.append(headerChunk.data(using: .ascii)!)
@@ -44,6 +44,11 @@ class MIDIFileCreator {
         data.append(contentsOf: [0x00, 0x00, 0x00, 0x00])
         
         let trackStartPosition = data.count
+        
+        let trackNameData = chordName.data(using: .ascii)!
+        let trackNameLength = UInt8(trackNameData.count)
+        data.append(contentsOf: [0x00, 0xFF, 0x03, trackNameLength])
+        data.append(trackNameData)
         
         data.append(contentsOf: [0x00, 0xFF, 0x51, 0x03, 0x07, 0xA1, 0x20])
         

@@ -17,9 +17,12 @@ class ChordRecognizer {
         guard !enabledChordTypes.isEmpty else { return "" }
         
         let pitchClasses = notes.map { $0 % 12 }.sorted()
+        let lowestNote = notes.min() ?? 0
+        let lowestNotePitchClass = lowestNote % 12
         
         var bestChord = "?"
         var bestScore = -1.0
+        var bestRootPitchClass = 0
         
         for rootPitchClass in 0..<12 {
             let relativePitchClasses = Set(pitchClasses.map { ($0 - rootPitchClass + 12) % 12 })
@@ -32,12 +35,20 @@ class ChordRecognizer {
                 
                 if score > bestScore {
                     bestScore = score
+                    bestRootPitchClass = rootPitchClass
                     let rootNoteName = useFlats ? 
                         ChordRecognizer.flatNoteNames[rootPitchClass] : 
                         ChordRecognizer.sharpNoteNames[rootPitchClass]
-                    bestChord = "\(rootNoteName) \(chordType.rawValue)"
+                    bestChord = getCompactChordName(rootNoteName: rootNoteName, chordType: chordType)
                 }
             }
+        }
+        
+        if bestChord != "?" && lowestNotePitchClass != bestRootPitchClass {
+            let bassNoteName = useFlats ? 
+                ChordRecognizer.flatNoteNames[lowestNotePitchClass] : 
+                ChordRecognizer.sharpNoteNames[lowestNotePitchClass]
+            bestChord = "\(bestChord)/\(bassNoteName)"
         }
         
         return bestChord
@@ -57,12 +68,134 @@ class ChordRecognizer {
         return 2 * precision * recall / (precision + recall)
     }
     
+    private func getCompactChordName(rootNoteName: String, chordType: ChordType) -> String {
+        switch chordType {
+        case .major:
+            return rootNoteName
+        case .minor:
+            return "\(rootNoteName)m"
+        case .major7:
+            return "\(rootNoteName)maj7"
+        case .minor7:
+            return "\(rootNoteName)m7"
+        case .major9:
+            return "\(rootNoteName)maj9"
+        case .minor9:
+            return "\(rootNoteName)m9"
+        case .major6:
+            return "\(rootNoteName)6"
+        case .minor6:
+            return "\(rootNoteName)m6"
+        case .major6add9:
+            return "\(rootNoteName)6/9"
+        case .minor6add9:
+            return "\(rootNoteName)m6/9"
+        case .add9:
+            return "\(rootNoteName)add9"
+        case .add11:
+            return "\(rootNoteName)add11"
+        case .add2:
+            return "\(rootNoteName)add2"
+        case .add4:
+            return "\(rootNoteName)add4"
+        case .major7sharp11:
+            return "\(rootNoteName)maj7#11"
+        case .dominant7:
+            return "\(rootNoteName)7"
+        case .dominant9:
+            return "\(rootNoteName)9"
+        case .dominant11:
+            return "\(rootNoteName)11"
+        case .dominant13:
+            return "\(rootNoteName)13"
+        case .dominant7sus4:
+            return "\(rootNoteName)7sus4"
+        case .sus2:
+            return "\(rootNoteName)sus2"
+        case .sus4:
+            return "\(rootNoteName)sus4"
+        case .augmented:
+            return "\(rootNoteName)aug"
+        case .augmented7:
+            return "\(rootNoteName)aug7"
+        case .diminished:
+            return "\(rootNoteName)dim"
+        case .diminished7:
+            return "\(rootNoteName)dim7"
+        case .halfDiminished7:
+            return "\(rootNoteName)m7b5"
+        case .minorMajor7:
+            return "\(rootNoteName)mM7"
+        case .minor7flat5:
+            return "\(rootNoteName)m7b5"
+        case .dominant7flat5:
+            return "\(rootNoteName)7b5"
+        case .dominant7sharp5:
+            return "\(rootNoteName)7#5"
+        case .dominant7flat9:
+            return "\(rootNoteName)7b9"
+        case .dominant7sharp9:
+            return "\(rootNoteName)7#9"
+        case .dominant7flat5flat9:
+            return "\(rootNoteName)7b5b9"
+        case .dominant7sharp5flat9:
+            return "\(rootNoteName)7#5b9"
+        case .dominant7flat5sharp9:
+            return "\(rootNoteName)7b5#9"
+        case .dominant7sharp5sharp9:
+            return "\(rootNoteName)7#5#9"
+        case .power:
+            return "\(rootNoteName)5"
+        }
+    }
+    
     static func getChordNotes(for chordName: String) -> [Int] {
-        let components = chordName.split(separator: " ", maxSplits: 1)
-        guard components.count == 2 else { return [] }
+        let components: [String]
+        if chordName.contains("/") {
+            let slashComponents = chordName.split(separator: "/", maxSplits: 1).map(String.init)
+            components = [slashComponents[0]]
+        } else {
+            components = chordName.split(separator: " ", maxSplits: 1).map(String.init)
+        }
         
-        let rootNoteName = String(components[0])
-        let chordTypeName = String(components[1])
+        guard !components.isEmpty else { return [] }
+        
+        var rootNoteName = components[0]
+        var chordTypeName = ""
+        
+        if components.count == 1 {
+            if rootNoteName.count > 1 {
+                let secondChar = rootNoteName[rootNoteName.index(rootNoteName.startIndex, offsetBy: 1)]
+                if secondChar == "m" || secondChar == "M" || secondChar == "7" || secondChar == "9" || 
+                   secondChar == "6" || secondChar == "5" || secondChar == "4" || secondChar == "2" ||
+                   secondChar == "a" || secondChar == "d" || secondChar == "s" {
+                    if rootNoteName == "\(rootNoteName.prefix(1))m" {
+                        chordTypeName = "Minor"
+                    } else if rootNoteName == "\(rootNoteName.prefix(1))m7" {
+                        chordTypeName = "Minor 7"
+                    } else if rootNoteName == "\(rootNoteName.prefix(1))maj7" {
+                        chordTypeName = "Major 7"
+                    } else if rootNoteName == "\(rootNoteName.prefix(1))7" {
+                        chordTypeName = "Dominant 7"
+                    } else if rootNoteName == "\(rootNoteName.prefix(1))dim" {
+                        chordTypeName = "Diminished"
+                    } else if rootNoteName == "\(rootNoteName.prefix(1))aug" {
+                        chordTypeName = "Augmented"
+                    } else if rootNoteName == "\(rootNoteName.prefix(1))sus4" {
+                        chordTypeName = "Sus 4"
+                    } else {
+                        chordTypeName = "Major"
+                    }
+                    rootNoteName = String(rootNoteName.prefix(1))
+                } else {
+                    chordTypeName = "Major"
+                }
+            } else {
+                chordTypeName = "Major"
+            }
+        } else if components.count == 2 {
+            chordTypeName = components[1]
+        }
         
         var rootPitchClass = -1
         for i in 0..<12 {
