@@ -172,44 +172,48 @@ class ChordRecognizer {
         
         guard !components.isEmpty else { return [] }
         
-        var rootNoteName = components[0]
+        var rootNoteName = ""
         var chordTypeName = ""
+        var chordText = components[0]
+        
+        for i in 0..<12 {
+            let sharpName = sharpNoteNames[i]
+            let flatName = flatNoteNames[i]
+            
+            if chordText.hasPrefix(sharpName) {
+                rootNoteName = sharpName
+                chordText = String(chordText.dropFirst(sharpName.count))
+                break
+            } else if chordText.hasPrefix(flatName) {
+                rootNoteName = flatName
+                chordText = String(chordText.dropFirst(flatName.count))
+                break
+            }
+        }
+        
+        guard !rootNoteName.isEmpty else { return [] }
         
         if components.count == 1 {
-            if rootNoteName.count > 1 {
-                if rootNoteName.hasSuffix("7sus4") {
-                    chordTypeName = "Dominant 7 sus4" // Ensure this matches exactly with ChordType.dominant7sus4.rawValue
-                    rootNoteName = String(rootNoteName.dropLast(5))
-                } else if rootNoteName.hasSuffix("m7b5") {
-                    chordTypeName = "Minor 7 ♭5" // Ensure this matches exactly with ChordType.minor7flat5.rawValue
-                    rootNoteName = String(rootNoteName.dropLast(4))
-                } else {
-                    let secondChar = rootNoteName[rootNoteName.index(rootNoteName.startIndex, offsetBy: 1)]
-                    if secondChar == "m" || secondChar == "M" || secondChar == "7" || secondChar == "9" || 
-                       secondChar == "6" || secondChar == "5" || secondChar == "4" || secondChar == "2" ||
-                       secondChar == "a" || secondChar == "d" || secondChar == "s" {
-                        if rootNoteName == "\(rootNoteName.prefix(1))m" {
-                            chordTypeName = "Minor"
-                        } else if rootNoteName == "\(rootNoteName.prefix(1))m7" {
-                            chordTypeName = "Minor 7"
-                        } else if rootNoteName == "\(rootNoteName.prefix(1))maj7" {
-                            chordTypeName = "Major 7"
-                        } else if rootNoteName == "\(rootNoteName.prefix(1))7" {
-                            chordTypeName = "Dominant 7"
-                        } else if rootNoteName == "\(rootNoteName.prefix(1))dim" {
-                            chordTypeName = "Diminished"
-                        } else if rootNoteName == "\(rootNoteName.prefix(1))aug" {
-                            chordTypeName = "Augmented"
-                        } else if rootNoteName == "\(rootNoteName.prefix(1))sus4" {
-                            chordTypeName = "Sus 4"
-                        } else {
-                            chordTypeName = "Major"
-                        }
-                        rootNoteName = String(rootNoteName.prefix(1))
-                    } else {
-                        chordTypeName = "Major"
-                    }
-                }
+            if chordText.isEmpty {
+                chordTypeName = "Major"
+            } else if chordText == "m" {
+                chordTypeName = "Minor"
+            } else if chordText == "m7" {
+                chordTypeName = "Minor 7"
+            } else if chordText == "maj7" {
+                chordTypeName = "Major 7"
+            } else if chordText == "7" {
+                chordTypeName = "Dominant 7"
+            } else if chordText == "dim" {
+                chordTypeName = "Diminished"
+            } else if chordText == "aug" {
+                chordTypeName = "Augmented"
+            } else if chordText == "sus4" {
+                chordTypeName = "Sus 4"
+            } else if chordText == "7sus4" {
+                chordTypeName = "Dominant 7 sus4"
+            } else if chordText == "m7b5" {
+                chordTypeName = "Minor 7 ♭5"
             } else {
                 chordTypeName = "Major"
             }
