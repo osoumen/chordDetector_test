@@ -10,11 +10,12 @@ class MIDIFileCreator {
         let fileManager = FileManager.default
         let tempDir = fileManager.temporaryDirectory
         let fileName = chordName.replacingOccurrences(of: " ", with: "_")
-            .replacingOccurrences(of: "♯", with: "sharp")
-            .replacingOccurrences(of: "♭", with: "flat")
+            .replacingOccurrences(of: "♯", with: "#")
+            .replacingOccurrences(of: "♭", with: "b")
+            .replacingOccurrences(of: "/", with: "_over_")
         let fileURL = tempDir.appendingPathComponent("\(fileName).mid")
         
-        let midiData = createMIDIData(for: notes, named: chordName)
+        let midiData = createMIDIData(for: notes, named: sanitizeMetaEventString(chordName))
         
         do {
             try midiData.write(to: fileURL)
@@ -23,6 +24,11 @@ class MIDIFileCreator {
             print("Error writing MIDI file: \(error)")
             return nil
         }
+    }
+    
+    private func sanitizeMetaEventString(_ input: String) -> String {
+        return input.replacingOccurrences(of: "♯", with: "#")
+               .replacingOccurrences(of: "♭", with: "b")
     }
     
     private func createMIDIData(for notes: [Int], named chordName: String) -> Data {
@@ -59,7 +65,7 @@ class MIDIFileCreator {
         }
         
         for note in notes {
-            data.append(contentsOf: [0x87, 0x40, 0x80, UInt8(note), 0x00]) // Delta time 0x740 = 1920 ticks
+            data.append(contentsOf: [0x8F, 0x7F, 0x80, UInt8(note), 0x00]) // Full note duration
         }
         
         data.append(contentsOf: endOfTrack)
