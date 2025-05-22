@@ -33,6 +33,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         chordDetectorController.stopMIDIMonitoring()
     }
     
+    private var floatingWindow: NSWindow?
+    
     @objc func togglePopover(_ sender: AnyObject?) {
         if let button = statusBarItem.button {
             if popover.isShown {

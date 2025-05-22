@@ -49,9 +49,22 @@ struct ChordDisplayView: View {
                 .fixedSize()
                 .onDrag {
                     self.dragChord = chordDetectorController.currentChord
-                    if let url = chordDetectorController.createMIDIFile(for: chordDetectorController.currentChord) {
-                        let provider = NSItemProvider(contentsOf: url)
-                        return provider ?? NSItemProvider()
+                    if !chordDetectorController.currentChord.isEmpty && chordDetectorController.currentChord != "---" {
+                        let chordName = chordDetectorController.currentChord
+                        
+                        if let url = chordDetectorController.createMIDIFile(for: chordName) {
+                            do {
+                                let fileManager = FileManager.default
+                                if fileManager.fileExists(atPath: url.path) {
+                                    let provider = NSItemProvider(contentsOf: url)
+                                    if let validProvider = provider {
+                                        return validProvider
+                                    }
+                                }
+                            } catch {
+                                print("Error during drag operation: \(error)")
+                            }
+                        }
                     }
                     return NSItemProvider()
                 }
