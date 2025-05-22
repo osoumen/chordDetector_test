@@ -35,20 +35,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     private var floatingWindow: NSWindow?
     
+    private var popoverWindow: NSWindow?
+    
     @objc func togglePopover(_ sender: AnyObject?) {
         if let button = statusBarItem.button {
             if popover.isShown {
                 popover.performClose(sender)
+                popoverWindow = nil
             } else {
                 popover.show(relativeTo: button.bounds, of: button, preferredEdge: NSRectEdge.minY)
                 
-                if let popoverWindow = popover.contentViewController?.view.window {
+                if let window = popover.contentViewController?.view.window {
+                    popoverWindow = window
+                    
                     let screenRect = NSScreen.main?.frame ?? NSRect.zero
                     let newOrigin = NSPoint(
-                        x: (screenRect.width - popoverWindow.frame.width) / 2,
+                        x: (screenRect.width - window.frame.width) / 2,
                         y: screenRect.height - 150
                     )
-                    popoverWindow.setFrameOrigin(newOrigin)
+                    window.setFrameOrigin(newOrigin)
+                    
+                    window.level = .floating
+                    window.isMovable = false
                 }
             }
         }
