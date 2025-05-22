@@ -104,15 +104,32 @@ class ChordDetectorController: ObservableObject {
             let source = MIDIGetSource(i)
             var name: Unmanaged<CFString>?
             var manufacturer: Unmanaged<CFString>?
+            var model: Unmanaged<CFString>?
             
             MIDIObjectGetStringProperty(source, kMIDIPropertyName, &name)
             MIDIObjectGetStringProperty(source, kMIDIPropertyManufacturer, &manufacturer)
+            MIDIObjectGetStringProperty(source, kMIDIPropertyModel, &model)
             
             if let cfName = name?.takeRetainedValue() {
                 let deviceName = cfName as String
                 let manufacturerName = manufacturer?.takeRetainedValue() as String? ?? ""
+                let modelName = model?.takeRetainedValue() as String? ?? ""
                 
-                let fullName = manufacturerName.isEmpty ? deviceName : "\(manufacturerName) \(deviceName)"
+                var components: [String] = []
+                
+                if !manufacturerName.isEmpty && !deviceName.lowercased().contains(manufacturerName.lowercased()) {
+                    components.append(manufacturerName)
+                }
+                
+                components.append(deviceName)
+                
+                if !modelName.isEmpty && 
+                   !deviceName.lowercased().contains(modelName.lowercased()) && 
+                   !manufacturerName.lowercased().contains(modelName.lowercased()) {
+                    components.append(modelName)
+                }
+                
+                let fullName = components.joined(separator: " ")
                 let device = MIDIDevice(id: Int(source), name: fullName)
                 availableMIDIDevices.append(device)
             }
@@ -176,15 +193,15 @@ class ChordDetectorController: ObservableObject {
             
             if statusType == 0x90 && velocity > 0 {
                 activeNotes.insert(note)
+                updateChordDisplay()
             } else {
                 if !isDamperActive {
                     activeNotes.remove(note)
+                    updateChordDisplay()
                 } else {
                     heldNotes.insert(note)
                 }
             }
-            
-            updateChordDisplay()
         } else if statusType == 0xB0 { // Control Change
             let controlNumber = packetData[1]
             let controlValue = packetData[2]
@@ -194,22 +211,38 @@ class ChordDetectorController: ObservableObject {
                 isDamperActive = isDamperOn
                 
                 if !isDamperOn {
+                    let hadHeldNotes = !heldNotes.isEmpty
                     for note in heldNotes {
                         activeNotes.remove(note)
                     }
                     heldNotes.removeAll()
-                    updateChordDisplay()
+                    if hadHeldNotes {
+                        updateChordDisplay()
+                    }
                 }
             }
         }
     }
     
+    private var inactivityTimer: Timer?
+    
     private func updateChordDisplay() {
+        inactivityTimer?.invalidate()
+        
         if activeNotes.isEmpty {
             currentChord = "---"
         } else {
             let recognizer = ChordRecognizer(enabledChordTypes: enabledChordTypes, useFlats: useFlats)
             currentChord = recognizer.recognizeChord(from: activeNotes)
+            
+            inactivityTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { [weak self] _ in
+                guard let self = self else { return }
+                if !self.activeNotes.isEmpty && self.currentChord != "---" {
+                    self.activeNotes.removeAll()
+                    self.currentChord = "---"
+                    self.chordUpdateCallback?(self.currentChord)
+                }
+            }
         }
         
         chordUpdateCallback?(currentChord)

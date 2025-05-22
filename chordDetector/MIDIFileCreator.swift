@@ -9,10 +9,18 @@ class MIDIFileCreator {
     func createMIDIFile(for notes: [Int], named chordName: String) -> URL? {
         let fileManager = FileManager.default
         let tempDir = fileManager.temporaryDirectory
-        let fileName = chordName.replacingOccurrences(of: " ", with: "_")
-            .replacingOccurrences(of: "♯", with: "#")
-            .replacingOccurrences(of: "♭", with: "b")
-            .replacingOccurrences(of: "/", with: "_over_")
+        
+        var fileName = chordName
+        fileName = fileName.replacingOccurrences(of: " ", with: "_")
+        fileName = fileName.replacingOccurrences(of: "♯", with: "sharp")
+        fileName = fileName.replacingOccurrences(of: "#", with: "sharp")
+        fileName = fileName.replacingOccurrences(of: "♭", with: "flat")
+        fileName = fileName.replacingOccurrences(of: "b", with: "flat")
+        fileName = fileName.replacingOccurrences(of: "/", with: "_over_")
+        
+        let allowedCharacters = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_-."))
+        fileName = fileName.components(separatedBy: allowedCharacters.inverted).joined()
+        
         let fileURL = tempDir.appendingPathComponent("\(fileName).mid")
         
         let midiData = createMIDIData(for: notes, named: sanitizeMetaEventString(chordName))
@@ -64,8 +72,9 @@ class MIDIFileCreator {
             data.append(contentsOf: [0x00, 0x90, UInt8(note), 0x64]) // Channel 1, velocity 100
         }
         
+        // Use a consistent whole note duration for all notes (4 beats at 480 ticks per quarter note = 1920 ticks)
         for note in notes {
-            data.append(contentsOf: [0x8F, 0x7F, 0x80, UInt8(note), 0x00]) // Full note duration
+            data.append(contentsOf: [0x87, 0x40, 0x80, UInt8(note), 0x00]) // Whole note duration (4 beats)
         }
         
         data.append(contentsOf: endOfTrack)

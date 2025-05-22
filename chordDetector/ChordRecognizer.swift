@@ -177,30 +177,38 @@ class ChordRecognizer {
         
         if components.count == 1 {
             if rootNoteName.count > 1 {
-                let secondChar = rootNoteName[rootNoteName.index(rootNoteName.startIndex, offsetBy: 1)]
-                if secondChar == "m" || secondChar == "M" || secondChar == "7" || secondChar == "9" || 
-                   secondChar == "6" || secondChar == "5" || secondChar == "4" || secondChar == "2" ||
-                   secondChar == "a" || secondChar == "d" || secondChar == "s" {
-                    if rootNoteName == "\(rootNoteName.prefix(1))m" {
-                        chordTypeName = "Minor"
-                    } else if rootNoteName == "\(rootNoteName.prefix(1))m7" {
-                        chordTypeName = "Minor 7"
-                    } else if rootNoteName == "\(rootNoteName.prefix(1))maj7" {
-                        chordTypeName = "Major 7"
-                    } else if rootNoteName == "\(rootNoteName.prefix(1))7" {
-                        chordTypeName = "Dominant 7"
-                    } else if rootNoteName == "\(rootNoteName.prefix(1))dim" {
-                        chordTypeName = "Diminished"
-                    } else if rootNoteName == "\(rootNoteName.prefix(1))aug" {
-                        chordTypeName = "Augmented"
-                    } else if rootNoteName == "\(rootNoteName.prefix(1))sus4" {
-                        chordTypeName = "Sus 4"
+                if rootNoteName.hasSuffix("7sus4") {
+                    chordTypeName = "Dominant 7 sus4" // Ensure this matches exactly with ChordType.dominant7sus4.rawValue
+                    rootNoteName = String(rootNoteName.dropLast(5))
+                } else if rootNoteName.hasSuffix("m7b5") {
+                    chordTypeName = "Minor 7 ♭5" // Ensure this matches exactly with ChordType.minor7flat5.rawValue
+                    rootNoteName = String(rootNoteName.dropLast(4))
+                } else {
+                    let secondChar = rootNoteName[rootNoteName.index(rootNoteName.startIndex, offsetBy: 1)]
+                    if secondChar == "m" || secondChar == "M" || secondChar == "7" || secondChar == "9" || 
+                       secondChar == "6" || secondChar == "5" || secondChar == "4" || secondChar == "2" ||
+                       secondChar == "a" || secondChar == "d" || secondChar == "s" {
+                        if rootNoteName == "\(rootNoteName.prefix(1))m" {
+                            chordTypeName = "Minor"
+                        } else if rootNoteName == "\(rootNoteName.prefix(1))m7" {
+                            chordTypeName = "Minor 7"
+                        } else if rootNoteName == "\(rootNoteName.prefix(1))maj7" {
+                            chordTypeName = "Major 7"
+                        } else if rootNoteName == "\(rootNoteName.prefix(1))7" {
+                            chordTypeName = "Dominant 7"
+                        } else if rootNoteName == "\(rootNoteName.prefix(1))dim" {
+                            chordTypeName = "Diminished"
+                        } else if rootNoteName == "\(rootNoteName.prefix(1))aug" {
+                            chordTypeName = "Augmented"
+                        } else if rootNoteName == "\(rootNoteName.prefix(1))sus4" {
+                            chordTypeName = "Sus 4"
+                        } else {
+                            chordTypeName = "Major"
+                        }
+                        rootNoteName = String(rootNoteName.prefix(1))
                     } else {
                         chordTypeName = "Major"
                     }
-                    rootNoteName = String(rootNoteName.prefix(1))
-                } else {
-                    chordTypeName = "Major"
                 }
             } else {
                 chordTypeName = "Major"
