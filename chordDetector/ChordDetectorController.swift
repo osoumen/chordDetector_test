@@ -1,5 +1,6 @@
 import Foundation
 import CoreMIDI
+import AppKit
 
 class ChordDetectorController: ObservableObject {
     @Published var currentChord: String = "---"
@@ -13,6 +14,8 @@ class ChordDetectorController: ObservableObject {
     private var midiInputPort: MIDIPortRef = 0
     private var midiSources: [MIDIEndpointRef] = []
     private var chordUpdateCallback: ((String) -> Void)?
+    private var isDamperActive: Bool = false
+    private var heldNotes: Set<Int> = []
     
     init() {
         setupMIDI()
@@ -29,9 +32,13 @@ class ChordDetectorController: ObservableObject {
     }
     
     func createMIDIFile(for chordName: String) -> URL? {
-        let chord = ChordRecognizer.getChordNotes(for: chordName)
+        let chordNotes = ChordRecognizer.getChordNotes(for: chordName)
+        if chordNotes.isEmpty {
+            return nil
+        }
+        
         let midiFileCreator = MIDIFileCreator()
-        return midiFileCreator.createMIDIFile(for: chord, named: chordName)
+        return midiFileCreator.createMIDIFile(for: chordNotes, named: chordName)
     }
     
     func copyChordNameToClipboard() {
@@ -96,11 +103,17 @@ class ChordDetectorController: ObservableObject {
         for i in 0..<sourceCount {
             let source = MIDIGetSource(i)
             var name: Unmanaged<CFString>?
+            var manufacturer: Unmanaged<CFString>?
+            
             MIDIObjectGetStringProperty(source, kMIDIPropertyName, &name)
+            MIDIObjectGetStringProperty(source, kMIDIPropertyManufacturer, &manufacturer)
             
             if let cfName = name?.takeRetainedValue() {
                 let deviceName = cfName as String
-                let device = MIDIDevice(id: Int(source), name: deviceName)
+                let manufacturerName = manufacturer?.takeRetainedValue() as String? ?? ""
+                
+                let fullName = manufacturerName.isEmpty ? deviceName : "\(manufacturerName) \(deviceName)"
+                let device = MIDIDevice(id: Int(source), name: fullName)
                 availableMIDIDevices.append(device)
             }
         }
@@ -164,10 +177,30 @@ class ChordDetectorController: ObservableObject {
             if statusType == 0x90 && velocity > 0 {
                 activeNotes.insert(note)
             } else {
-                activeNotes.remove(note)
+                if !isDamperActive {
+                    activeNotes.remove(note)
+                } else {
+                    heldNotes.insert(note)
+                }
             }
             
             updateChordDisplay()
+        } else if statusType == 0xB0 { // Control Change
+            let controlNumber = packetData[1]
+            let controlValue = packetData[2]
+            
+            if controlNumber == 64 {
+                let isDamperOn = controlValue >= 64
+                isDamperActive = isDamperOn
+                
+                if !isDamperOn {
+                    for note in heldNotes {
+                        activeNotes.remove(note)
+                    }
+                    heldNotes.removeAll()
+                    updateChordDisplay()
+                }
+            }
         }
     }
     

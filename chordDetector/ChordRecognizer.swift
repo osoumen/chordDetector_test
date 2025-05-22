@@ -153,9 +153,21 @@ class ChordRecognizer {
     
     static func getChordNotes(for chordName: String) -> [Int] {
         let components: [String]
+        var bassNote: Int? = nil
+        
         if chordName.contains("/") {
             let slashComponents = chordName.split(separator: "/", maxSplits: 1).map(String.init)
             components = [slashComponents[0]]
+            
+            if slashComponents.count > 1 {
+                let bassNoteName = slashComponents[1].trimmingCharacters(in: .whitespaces)
+                for i in 0..<12 {
+                    if sharpNoteNames[i] == bassNoteName || flatNoteNames[i] == bassNoteName {
+                        bassNote = 48 + i // Use a lower octave for bass note
+                        break
+                    }
+                }
+            }
         } else {
             components = chordName.split(separator: " ", maxSplits: 1).map(String.init)
         }
@@ -214,7 +226,13 @@ class ChordRecognizer {
         let template = ChordTemplates.getTemplate(for: chordType)
         
         let baseNote = 60 + rootPitchClass
-        return template.map { baseNote + $0 }
+        var result = template.map { baseNote + $0 }
+        
+        if let bassNote = bassNote, !result.contains(bassNote) {
+            result.insert(bassNote, at: 0)
+        }
+        
+        return result
     }
 }
 
@@ -240,7 +258,7 @@ struct ChordTemplates {
         static let sixth = [0, 3, 7, 9]
         static let sixthNinth = [0, 3, 7, 9, 14]
         static let majorSeventh = [0, 3, 7, 11]
-        static let seventhFlat5 = [0, 3, 6, 10]
+        static let seventhFlat5 = [0, 3, 6, 10] // Correct voicing for Dm7b5: D, F, Ab, C
     }
     
     struct Dominant {
@@ -248,7 +266,7 @@ struct ChordTemplates {
         static let ninth = [0, 4, 7, 10, 14]
         static let eleventh = [0, 4, 7, 10, 14, 17]
         static let thirteenth = [0, 4, 7, 10, 14, 17, 21]
-        static let seventhSus4 = [0, 5, 7, 10]
+        static let seventhSus4 = [0, 5, 7, 10] // Correct voicing for C7sus4: C, F, G, Bb
         static let seventhFlat5 = [0, 4, 6, 10]
         static let seventhSharp5 = [0, 4, 8, 10]
         static let seventhFlat9 = [0, 4, 7, 10, 13]
