@@ -1,0 +1,76 @@
+import Foundation
+import CoreMIDI
+
+class MIDIFileCreator {
+    private let headerChunk = "MThd"
+    private let trackChunk = "MTrk"
+    private let endOfTrack: [UInt8] = [0x00, 0xFF, 0x2F, 0x00]
+    
+    func createMIDIFile(for notes: [Int], named chordName: String) -> URL? {
+        let fileManager = FileManager.default
+        let tempDir = fileManager.temporaryDirectory
+        let fileName = chordName.replacingOccurrences(of: " ", with: "_")
+            .replacingOccurrences(of: "♯", with: "sharp")
+            .replacingOccurrences(of: "♭", with: "flat")
+        let fileURL = tempDir.appendingPathComponent("\(fileName).mid")
+        
+        let midiData = createMIDIData(for: notes)
+        
+        do {
+            try midiData.write(to: fileURL)
+            return fileURL
+        } catch {
+            print("Error writing MIDI file: \(error)")
+            return nil
+        }
+    }
+    
+    private func createMIDIData(for notes: [Int]) -> Data {
+        var data = Data()
+        
+        data.append(headerChunk.data(using: .ascii)!)
+        
+        data.append(contentsOf: [0x00, 0x00, 0x00, 0x06])
+        
+        data.append(contentsOf: [0x00, 0x00])
+        
+        data.append(contentsOf: [0x00, 0x01])
+        
+        data.append(contentsOf: [0x01, 0xE0])
+        
+        data.append(trackChunk.data(using: .ascii)!)
+        
+        let trackLengthPosition = data.count
+        data.append(contentsOf: [0x00, 0x00, 0x00, 0x00])
+        
+        let trackStartPosition = data.count
+        
+        data.append(contentsOf: [0x00, 0xFF, 0x51, 0x03, 0x07, 0xA1, 0x20])
+        
+        data.append(contentsOf: [0x00, 0xFF, 0x58, 0x04, 0x04, 0x02, 0x18, 0x08])
+        
+        for note in notes {
+            data.append(contentsOf: [0x00, 0x90, UInt8(note), 0x64]) // Channel 1, velocity 100
+        }
+        
+        for note in notes {
+            data.append(contentsOf: [0x87, 0x40, 0x80, UInt8(note), 0x00]) // Delta time 0x740 = 1920 ticks
+        }
+        
+        data.append(contentsOf: endOfTrack)
+        
+        let trackLength = data.count - trackStartPosition
+        let trackLengthBytes: [UInt8] = [
+            UInt8((trackLength >> 24) & 0xFF),
+            UInt8((trackLength >> 16) & 0xFF),
+            UInt8((trackLength >> 8) & 0xFF),
+            UInt8(trackLength & 0xFF)
+        ]
+        
+        for i in 0..<4 {
+            data[trackLengthPosition + i] = trackLengthBytes[i]
+        }
+        
+        return data
+    }
+}
