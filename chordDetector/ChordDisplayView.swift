@@ -8,25 +8,45 @@ struct ChordDisplayView: View {
     var body: some View {
         VStack {
             HStack {
+                Button(action: {
+                    NSApplication.shared.terminate(nil)
+                }) {
+                    Image(systemName: "power")
+                        .font(.system(size: 14))
+                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.leading, 10)
+                
                 Spacer()
+                
+                Button(action: {
+                    chordDetectorController.copyChordNameToClipboard()
+                }) {
+                    Image(systemName: "doc.on.doc")
+                        .font(.system(size: 14))
+                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.horizontal, 5)
+                
                 Button(action: {
                     showSettings.toggle()
                 }) {
                     Image(systemName: "gear")
-                        .font(.system(size: 20))
+                        .font(.system(size: 14))
                 }
                 .buttonStyle(PlainButtonStyle())
                 .popover(isPresented: $showSettings) {
                     SettingsView(chordDetectorController: chordDetectorController)
                 }
             }
-            .padding([.top, .trailing], 10)
+            .padding([.top, .trailing], 5)
             
             Spacer()
             
             Text(chordDetectorController.currentChord)
                 .font(.system(size: 24, weight: .bold))
                 .padding()
+                .fixedSize()
                 .onDrag {
                     self.dragChord = chordDetectorController.currentChord
                     if let url = chordDetectorController.createMIDIFile(for: chordDetectorController.currentChord) {
@@ -38,7 +58,7 @@ struct ChordDisplayView: View {
             
             Spacer()
         }
-        .frame(width: 300, height: 200)
+        .frame(width: 150, height: 100)
     }
 }
 
@@ -65,20 +85,6 @@ struct SettingsView: View {
             }
             
             Divider()
-            
-            Button(action: {
-                chordDetectorController.copyChordNameToClipboard()
-            }) {
-                Label("Copy Chord Name", systemImage: "doc.on.doc")
-            }
-            .padding(.vertical, 5)
-            
-            Button(action: {
-                NSApplication.shared.terminate(nil)
-            }) {
-                Label("Quit", systemImage: "power")
-            }
-            .padding(.vertical, 5)
         }
         .frame(width: 300, height: 400)
         .padding()

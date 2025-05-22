@@ -15,7 +15,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusBarItem.button?.title = "---"
         
         popover = NSPopover()
-        popover.contentSize = NSSize(width: 300, height: 200)
+        popover.contentSize = NSSize(width: 150, height: 100)
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(rootView: ChordDisplayView(chordDetectorController: chordDetectorController))
         
@@ -38,7 +38,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if popover.isShown {
                 popover.performClose(sender)
             } else {
-                popover.show(relativeTo: button.bounds, of: button, preferredEdge: NSRectEdge.minY)
+                let buttonRect = button.window?.convertToScreen(button.frame) ?? NSRect.zero
+                let screenRect = NSScreen.main?.frame ?? NSRect.zero
+                let popoverRect = NSRect(x: buttonRect.midX - 75, y: screenRect.height - 120, width: 150, height: 100)
+                popover.show(relativeTo: popoverRect, of: button.window?.contentView ?? button, preferredEdge: NSRectEdge.minY)
             }
         }
     }
