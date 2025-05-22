@@ -82,6 +82,8 @@ class ChordRecognizer {
             return "\(rootNoteName)maj9"
         case .minor9:
             return "\(rootNoteName)m9"
+        case .minor11:
+            return "\(rootNoteName)m11"
         case .major6:
             return "\(rootNoteName)6"
         case .minor6:

@@ -38,10 +38,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if popover.isShown {
                 popover.performClose(sender)
             } else {
-                let buttonRect = button.window?.convertToScreen(button.frame) ?? NSRect.zero
-                let screenRect = NSScreen.main?.frame ?? NSRect.zero
-                let popoverRect = NSRect(x: buttonRect.midX - 75, y: screenRect.height - 120, width: 150, height: 100)
-                popover.show(relativeTo: popoverRect, of: button.window?.contentView ?? button, preferredEdge: NSRectEdge.minY)
+                popover.show(relativeTo: button.bounds, of: button, preferredEdge: NSRectEdge.minY)
+                
+                if let popoverWindow = popover.contentViewController?.view.window {
+                    let screenRect = NSScreen.main?.frame ?? NSRect.zero
+                    let newOrigin = NSPoint(
+                        x: (screenRect.width - popoverWindow.frame.width) / 2,
+                        y: screenRect.height - 150
+                    )
+                    popoverWindow.setFrameOrigin(newOrigin)
+                }
             }
         }
     }
