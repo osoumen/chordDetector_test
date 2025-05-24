@@ -196,7 +196,7 @@ class ChordDetectorController: ObservableObject {
             } else {
                 if !isDamperActive {
                     activeNotes.remove(note)
-                    updateChordDisplay()
+//                    updateChordDisplay()
                 } else {
                     heldNotes.insert(note)
                 }
