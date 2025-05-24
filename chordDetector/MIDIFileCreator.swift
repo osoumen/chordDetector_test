@@ -72,10 +72,12 @@ class MIDIFileCreator {
             data.append(contentsOf: [0x00, 0x90, UInt8(note), 0x64]) // Channel 1, velocity 100
         }
         
-        // Use a consistent whole note duration for all notes (4 beats at 480 ticks per quarter note = 1920 ticks)
+        data.append(contentsOf: [0x8f, 0x00])
+
         for note in notes {
-            data.append(contentsOf: [0x8F, 0x7F, 0x80, UInt8(note), 0x00]) // Whole note duration (4 beats)
+            data.append(contentsOf: [0x80, UInt8(note), 0x00, 0x00]) // Whole note duration (4 beats)
         }
+
         
         data.append(contentsOf: endOfTrack)
         
