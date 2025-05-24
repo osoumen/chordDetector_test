@@ -174,7 +174,9 @@ class ChordDetectorController: ObservableObject {
                 Data(bytes: ptr, count: Int(packet.length))
             }
             
-            processMIDIPacket(packetData)
+            DispatchQueue.main.async {
+                self.processMIDIPacket(packetData)
+            }
             
             packet = MIDIPacketNext(&packet).pointee
         }
