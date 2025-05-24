@@ -31,9 +31,13 @@ class ChordRecognizer {
                 let template = ChordTemplates.getTemplate(for: chordType)
                 let templateSet = Set(template.map { $0 % 12 })
                 
-                let score = calculateF1Score(actual: relativePitchClasses, expected: templateSet)
+                var score = calculateF1ScoreLinear(actual: relativePitchClasses, expected: templateSet)
                 
-                if score > bestScore {
+                if lowestNotePitchClass != rootPitchClass {
+                    score *= 0.98
+                }
+                
+                if score >= bestScore {
                     bestScore = score
                     bestRootPitchClass = rootPitchClass
                     bestChordType = chordType
@@ -62,18 +66,47 @@ class ChordRecognizer {
         return bestChord
     }
     
-    private func calculateF1Score(actual: Set<Int>, expected: Set<Int>) -> Double {
-        let truePositives = Double(actual.intersection(expected).count)
-        let falsePositives = Double(actual.subtracting(expected).count)
-        let falseNegatives = Double(expected.subtracting(actual).count)
-        
-        let precision = truePositives / (truePositives + falsePositives)
-        let recall = truePositives / (truePositives + falseNegatives)
-        
+    func calculateF1ScoreLinear(actual: Set<Int>, expected: Set<Int>) -> Double {
+        let sortedActual = actual.sorted()
+        let sortedExpected = expected.sorted()
+
+        var i = 0, j = 0
+        var truePositives = 0
+        var falsePositives = 0
+        var falseNegatives = 0
+
+        while i < sortedActual.count && j < sortedExpected.count {
+            if sortedActual[i] == sortedExpected[j] {
+                truePositives += 1
+                i += 1
+                j += 1
+            } else if sortedActual[i] < sortedExpected[j] {
+                falsePositives += 1
+                i += 1
+            } else {
+                falseNegatives += 1
+                j += 1
+            }
+        }
+
+        // 残り要素がある場合
+        falsePositives += sortedActual.count - i
+        falseNegatives += sortedExpected.count - j
+
+        let tp = Double(truePositives)
+        let fp = Double(falsePositives)
+        let fn = Double(falseNegatives)
+
+        let precisionDen = tp + fp
+        let recallDen = tp + fn
+
+        let precision = (precisionDen == 0) ? 0 : tp / precisionDen
+        let recall = (recallDen == 0) ? 0 : tp / recallDen
+
         if precision + recall == 0 {
             return 0
         }
-        return 2 * precision * recall / (precision + recall)
+        return (precision * recall) / (precision + recall)
     }
     
     private func getCompactChordName(rootNoteName: String, chordType: ChordType) -> String {
