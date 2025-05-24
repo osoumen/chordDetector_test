@@ -178,17 +178,12 @@ class ChordRecognizer {
         var chordTypeName = ""
         var chordText = components[0]
         
-        for i in 0..<12 {
-            let sharpName = sharpNoteNames[i]
-            let flatName = flatNoteNames[i]
-            
-            if chordText.hasPrefix(sharpName) {
-                rootNoteName = sharpName
-                chordText = String(chordText.dropFirst(sharpName.count))
-                break
-            } else if chordText.hasPrefix(flatName) {
-                rootNoteName = flatName
-                chordText = String(chordText.dropFirst(flatName.count))
+        let allNoteNames = (sharpNoteNames + flatNoteNames)
+            .sorted { $0.count > $1.count } // 長い順に並べる
+        for name in allNoteNames {
+            if chordText.hasPrefix(name) {
+                rootNoteName = name
+                chordText = String(chordText.dropFirst(name.count))
                 break
             }
         }
