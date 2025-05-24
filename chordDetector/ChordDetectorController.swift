@@ -116,19 +116,15 @@ class ChordDetectorController: ObservableObject {
                 let modelName = model?.takeRetainedValue() as String? ?? ""
                 
                 var components: [String] = []
-                
-                if !manufacturerName.isEmpty && !deviceName.lowercased().contains(manufacturerName.lowercased()) {
-                    components.append(manufacturerName)
-                }
-                
-                components.append(deviceName)
-                
-                if !modelName.isEmpty && 
+
+                if !modelName.isEmpty &&
                    !deviceName.lowercased().contains(modelName.lowercased()) && 
                    !manufacturerName.lowercased().contains(modelName.lowercased()) {
                     components.append(modelName)
                 }
                 
+                components.append(deviceName)
+
                 let fullName = components.joined(separator: " ")
                 let device = MIDIDevice(id: Int(source), name: fullName)
                 availableMIDIDevices.append(device)
