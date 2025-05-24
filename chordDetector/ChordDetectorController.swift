@@ -22,8 +22,11 @@ class ChordDetectorController: ObservableObject {
         loadSettings()
     }
     
-    func startMIDIMonitoring(chordUpdateCallback: @escaping (String) -> Void) {
+    func enableTitleUpdate(chordUpdateCallback: @escaping (String) -> Void) {
         self.chordUpdateCallback = chordUpdateCallback
+    }
+    
+    func startMIDIMonitoring() {
         connectToMIDIDevices()
     }
     
