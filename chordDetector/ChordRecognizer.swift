@@ -12,17 +12,17 @@ class ChordRecognizer {
         self.useFlats = useFlats
     }
     
-    func recognizeChord(from notes: Set<Int>) -> String {
-        guard !notes.isEmpty else { return "---" }
-        guard !enabledChordTypes.isEmpty else { return "" }
+    func recognizeChord(from notes: Set<Int>) -> (bestRootPitchClass: Int, bestChordType: ChordType, lowestNotePitchClass: Int) {
+        guard !notes.isEmpty else { return (-1, ChordType.major, -1) }
+        guard !enabledChordTypes.isEmpty else { return (-1, ChordType.major, -1) }
         
         let pitchClasses = notes.map { $0 % 12 }.sorted()
         let lowestNote = notes.min() ?? 0
         let lowestNotePitchClass = lowestNote % 12
         
-        var bestChord = "?"
         var bestScore = -1.0
         var bestRootPitchClass = 0
+        var bestChordType = ChordType.major
         
         for rootPitchClass in 0..<12 {
             let relativePitchClasses = Set(pitchClasses.map { ($0 - rootPitchClass + 12) % 12 })
@@ -36,21 +36,29 @@ class ChordRecognizer {
                 if score > bestScore {
                     bestScore = score
                     bestRootPitchClass = rootPitchClass
-                    let rootNoteName = useFlats ? 
-                        ChordRecognizer.flatNoteNames[rootPitchClass] : 
-                        ChordRecognizer.sharpNoteNames[rootPitchClass]
-                    bestChord = getCompactChordName(rootNoteName: rootNoteName, chordType: chordType)
+                    bestChordType = chordType
                 }
             }
         }
         
+        return (bestRootPitchClass, bestChordType, lowestNotePitchClass)
+    }
+    
+    func getChordName(bestRootPitchClass: Int, bestChordType: ChordType, lowestNotePitchClass: Int) -> String
+    {
+        var bestChord = "?"
+        
+        let rootNoteName = useFlats ?
+            ChordRecognizer.flatNoteNames[bestRootPitchClass] :
+            ChordRecognizer.sharpNoteNames[bestRootPitchClass]
+        bestChord = getCompactChordName(rootNoteName: rootNoteName, chordType: bestChordType)
+
         if bestChord != "?" && lowestNotePitchClass != bestRootPitchClass {
-            let bassNoteName = useFlats ? 
-                ChordRecognizer.flatNoteNames[lowestNotePitchClass] : 
+            let bassNoteName = useFlats ?
+                ChordRecognizer.flatNoteNames[lowestNotePitchClass] :
                 ChordRecognizer.sharpNoteNames[lowestNotePitchClass]
             bestChord = "\(bestChord)/\(bassNoteName)"
         }
-        
         return bestChord
     }
     
@@ -151,92 +159,22 @@ class ChordRecognizer {
         }
     }
     
-    static func getChordNotes(for chordName: String) -> [Int] {
-        let components: [String]
-        var bassNote: Int? = nil
-        
-        if chordName.contains("/") {
-            let slashComponents = chordName.split(separator: "/", maxSplits: 1).map(String.init)
-            components = [slashComponents[0]]
-            
-            if slashComponents.count > 1 {
-                let bassNoteName = slashComponents[1].trimmingCharacters(in: .whitespaces)
-                for i in 0..<12 {
-                    if sharpNoteNames[i] == bassNoteName || flatNoteNames[i] == bassNoteName {
-                        bassNote = 48 + i // Use a lower octave for bass note
-                        break
-                    }
-                }
-            }
-        } else {
-            components = chordName.split(separator: " ", maxSplits: 1).map(String.init)
-        }
-        
-        guard !components.isEmpty else { return [] }
-        
-        var rootNoteName = ""
-        var chordTypeName = ""
-        var chordText = components[0]
-        
-        let allNoteNames = (sharpNoteNames + flatNoteNames)
-            .sorted { $0.count > $1.count } // 長い順に並べる
-        for name in allNoteNames {
-            if chordText.hasPrefix(name) {
-                rootNoteName = name
-                chordText = String(chordText.dropFirst(name.count))
-                break
-            }
-        }
-        
-        guard !rootNoteName.isEmpty else { return [] }
-        
-        if components.count == 1 {
-            if chordText.isEmpty {
-                chordTypeName = "Major"
-            } else if chordText == "m" {
-                chordTypeName = "Minor"
-            } else if chordText == "m7" {
-                chordTypeName = "Minor 7"
-            } else if chordText == "maj7" {
-                chordTypeName = "Major 7"
-            } else if chordText == "7" {
-                chordTypeName = "Dominant 7"
-            } else if chordText == "dim" {
-                chordTypeName = "Diminished"
-            } else if chordText == "aug" {
-                chordTypeName = "Augmented"
-            } else if chordText == "sus4" {
-                chordTypeName = "Sus 4"
-            } else if chordText == "7sus4" {
-                chordTypeName = "Dominant 7 sus4"
-            } else if chordText == "m7b5" {
-                chordTypeName = "Minor 7 ♭5"
-            } else {
-                chordTypeName = "Major"
-            }
-        } else if components.count == 2 {
-            chordTypeName = components[1]
-        }
-        
-        var rootPitchClass = -1
-        for i in 0..<12 {
-            if sharpNoteNames[i] == rootNoteName || flatNoteNames[i] == rootNoteName {
-                rootPitchClass = i
-                break
-            }
-        }
+    static func getChordNotes(rootPitchClass: Int, chordType: ChordType, lowestNotePitchClass: Int) -> [Int] {
+        let bassNote: Int? = nil
         
         guard rootPitchClass != -1 else { return [] }
         
-        guard let chordType = ChordType(rawValue: chordTypeName) else { return [] }
-        
         let template = ChordTemplates.getTemplate(for: chordType)
         
-        let baseNote = 60 + rootPitchClass
+        let baseNote = 48 + rootPitchClass
         var result = template.map { baseNote + $0 }
         
+        if (rootPitchClass != lowestNotePitchClass) {
+            result.append(lowestNotePitchClass + 36)
+        }
+        
         if let bassNote = bassNote, !result.contains(bassNote) {
-            result.insert(bassNote, at: 0)
+            result.append(bassNote)
         }
         
         return result

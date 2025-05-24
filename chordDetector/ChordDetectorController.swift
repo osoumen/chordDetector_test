@@ -4,6 +4,9 @@ import AppKit
 
 class ChordDetectorController: ObservableObject {
     @Published var currentChord: String = "---"
+    @Published var currentRootNote: Int = -1
+    @Published var currentChordType: ChordType = .major
+    @Published var currentBassNote: Int = -1
     @Published var activeNotes: Set<Int> = []
     @Published var availableMIDIDevices: [MIDIDevice] = []
     @Published var selectedMIDIDevices: [MIDIDevice] = []
@@ -35,7 +38,7 @@ class ChordDetectorController: ObservableObject {
     }
     
     func createMIDIFile(for chordName: String) -> URL? {
-        let chordNotes = ChordRecognizer.getChordNotes(for: chordName)
+        let chordNotes = ChordRecognizer.getChordNotes(rootPitchClass: currentRootNote, chordType: currentChordType, lowestNotePitchClass: currentBassNote)
         if chordNotes.isEmpty {
             return nil
         }
@@ -234,7 +237,11 @@ class ChordDetectorController: ObservableObject {
             currentChord = "---"
         } else {
             let recognizer = ChordRecognizer(enabledChordTypes: enabledChordTypes, useFlats: useFlats)
-            currentChord = recognizer.recognizeChord(from: activeNotes)
+            let bestChord = recognizer.recognizeChord(from: activeNotes)
+            currentChord = recognizer.getChordName(bestRootPitchClass: bestChord.bestRootPitchClass, bestChordType: bestChord.bestChordType, lowestNotePitchClass: bestChord.lowestNotePitchClass)
+            currentRootNote = bestChord.bestRootPitchClass
+            currentChordType = bestChord.bestChordType
+            currentBassNote = bestChord.lowestNotePitchClass
             
             inactivityTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { [weak self] _ in
                 guard let self = self else { return }
