@@ -116,11 +116,11 @@ class ChordRecognizer {
         case .minor:
             return "\(rootNoteName)m"
         case .major7:
-            return "\(rootNoteName)maj7"
+            return "\(rootNoteName)M7"
         case .minor7:
             return "\(rootNoteName)m7"
         case .major9:
-            return "\(rootNoteName)maj9"
+            return "\(rootNoteName)M9"
         case .minor9:
             return "\(rootNoteName)m9"
         case .minor11:
@@ -129,20 +129,22 @@ class ChordRecognizer {
             return "\(rootNoteName)6"
         case .minor6:
             return "\(rootNoteName)m6"
+        case .minoradd9:
+            return "\(rootNoteName)madd9"
         case .major6add9:
-            return "\(rootNoteName)6/9"
+            return "\(rootNoteName)69"
         case .minor6add9:
-            return "\(rootNoteName)m6/9"
+            return "\(rootNoteName)m69"
         case .add9:
             return "\(rootNoteName)add9"
-        case .add11:
-            return "\(rootNoteName)add11"
-        case .add2:
-            return "\(rootNoteName)add2"
-        case .add4:
-            return "\(rootNoteName)add4"
+        case .seventh9:
+            return "\(rootNoteName)M9"
+        case .seventh13:
+            return "\(rootNoteName)M13"
+        case .seventhSharp5:
+            return "\(rootNoteName)M7#5"
         case .major7sharp11:
-            return "\(rootNoteName)maj7#11"
+            return "\(rootNoteName)M7#11"
         case .dominant7:
             return "\(rootNoteName)7"
         case .dominant9:
@@ -165,30 +167,34 @@ class ChordRecognizer {
             return "\(rootNoteName)dim"
         case .diminished7:
             return "\(rootNoteName)dim7"
-        case .halfDiminished7:
-            return "\(rootNoteName)m7b5"
         case .minorMajor7:
             return "\(rootNoteName)mM7"
         case .minor7flat5:
             return "\(rootNoteName)m7b5"
         case .dominant7flat5:
-            return "\(rootNoteName)7b5"
-        case .dominant7sharp5:
-            return "\(rootNoteName)7#5"
+            return "\(rootNoteName)7#11"
         case .dominant7flat9:
             return "\(rootNoteName)7b9"
         case .dominant7sharp9:
             return "\(rootNoteName)7#9"
         case .dominant7flat5flat9:
-            return "\(rootNoteName)7b5b9"
+            return "\(rootNoteName)7b9#11"
         case .dominant7sharp5flat9:
-            return "\(rootNoteName)7#5b9"
+            return "\(rootNoteName)7b9b13"
         case .dominant7flat5sharp9:
-            return "\(rootNoteName)7b5#9"
+            return "\(rootNoteName)7#9#11"
         case .dominant7sharp5sharp9:
             return "\(rootNoteName)7#5#9"
-        case .power:
-            return "\(rootNoteName)5"
+        case .dominant7sharp9_13:
+            return "\(rootNoteName)7#9,13"
+        case .dominant7flat9_13:
+            return "\(rootNoteName)7b9,13"
+        case .dominant7flat9sharp9:
+            return "\(rootNoteName)7b9#9"
+        case .dominant7flat9sharp9sharp11:
+            return "\(rootNoteName)7b9#9#11"
+        case .dominant7flat9sharp9flat13:
+            return "\(rootNoteName)7b9#9b13"
         }
     }
     
@@ -222,10 +228,12 @@ struct ChordTemplates {
         static let sixth = [0, 4, 7, 9]
         static let sixthNinth = [0, 4, 7, 9, 14]
         static let add9 = [0, 4, 7, 14]
-        static let add11 = [0, 4, 7, 17]
-        static let seventhSharp11 = [0, 4, 7, 11, 18]
-        static let add2 = [0, 2, 4, 7]
-        static let add4 = [0, 4, 5, 7]
+        static let seventh9 = [0, 4, 7, 11, 14]
+        
+        static let seventh13 = [0, 4, 9, 11]
+        static let seventhSharp5 = [0, 4, 8, 11]
+        
+        static let seventhSharp11 = [0, 4, 6, 11]
     }
     
     struct Minor {
@@ -235,24 +243,30 @@ struct ChordTemplates {
         static let eleventh = [0, 3, 7, 10, 14, 17]
         static let sixth = [0, 3, 7, 9]
         static let sixthNinth = [0, 3, 7, 9, 14]
+        static let add9 = [0, 3, 7, 14]
         static let majorSeventh = [0, 3, 7, 11]
-        static let seventhFlat5 = [0, 3, 6, 10] // Correct voicing for Dm7b5: D, F, Ab, C
+        static let seventhFlat5 = [0, 3, 6, 10]
     }
     
     struct Dominant {
         static let seventh = [0, 4, 7, 10]
         static let ninth = [0, 4, 7, 10, 14]
-        static let eleventh = [0, 4, 7, 10, 14, 17]
-        static let thirteenth = [0, 4, 7, 10, 14, 17, 21]
-        static let seventhSus4 = [0, 5, 7, 10] // Correct voicing for C7sus4: C, F, G, Bb
+        static let eleventh = [0, 4, 7, 10, 17]
+        static let thirteenth = [0, 4, 7, 10, 21]
+        static let seventhSus4 = [0, 5, 7, 10]
         static let seventhFlat5 = [0, 4, 6, 10]
-        static let seventhSharp5 = [0, 4, 8, 10]
         static let seventhFlat9 = [0, 4, 7, 10, 13]
         static let seventhSharp9 = [0, 4, 7, 10, 15]
         static let seventhFlat5Flat9 = [0, 4, 6, 10, 13]
         static let seventhSharp5Flat9 = [0, 4, 8, 10, 13]
         static let seventhFlat5Sharp9 = [0, 4, 6, 10, 15]
         static let seventhSharp5Sharp9 = [0, 4, 8, 10, 15]
+        
+        static let seventhSharp9_13 = [0, 4, 7, 10, 15, 20]
+        static let seventhFlat9_13 = [0, 4, 7, 10, 13, 20]
+        static let seventhFlat9Sharp9 = [0, 4, 7, 10, 13, 15]
+        static let seventhFlat9Sharp9Sharp11 = [0, 4, 7, 10, 13, 15, 18]
+        static let seventhFlat9Sharp9Flat13 = [0, 4, 7, 10, 13, 15, 20]
     }
     
     struct Suspended {
@@ -265,11 +279,6 @@ struct ChordTemplates {
         static let augmentedSeventh = [0, 4, 8, 10]
         static let diminished = [0, 3, 6]
         static let diminishedSeventh = [0, 3, 6, 9]
-        static let halfDiminishedSeventh = [0, 3, 6, 10]
-    }
-    
-    struct Power {
-        static let basic = [0, 7]
     }
     
     static func getTemplate(for chordType: ChordType) -> [Int] {
@@ -280,16 +289,17 @@ struct ChordTemplates {
         case .major6: return Major.sixth
         case .major6add9: return Major.sixthNinth
         case .add9: return Major.add9
-        case .add11: return Major.add11
+        case .seventh9: return Major.seventh9
+        case .seventh13: return Major.seventh13
+        case .seventhSharp5: return Major.seventhSharp5
         case .major7sharp11: return Major.seventhSharp11
-        case .add2: return Major.add2
-        case .add4: return Major.add4
             
         case .minor: return Minor.basic
         case .minor7: return Minor.seventh
         case .minor9: return Minor.ninth
         case .minor11: return Minor.eleventh
         case .minor6: return Minor.sixth
+        case .minoradd9: return Minor.add9
         case .minor6add9: return Minor.sixthNinth
         case .minorMajor7: return Minor.majorSeventh
         case .minor7flat5: return Minor.seventhFlat5
@@ -300,14 +310,18 @@ struct ChordTemplates {
         case .dominant13: return Dominant.thirteenth
         case .dominant7sus4: return Dominant.seventhSus4
         case .dominant7flat5: return Dominant.seventhFlat5
-        case .dominant7sharp5: return Dominant.seventhSharp5
         case .dominant7flat9: return Dominant.seventhFlat9
         case .dominant7sharp9: return Dominant.seventhSharp9
         case .dominant7flat5flat9: return Dominant.seventhFlat5Flat9
         case .dominant7sharp5flat9: return Dominant.seventhSharp5Flat9
         case .dominant7flat5sharp9: return Dominant.seventhFlat5Sharp9
         case .dominant7sharp5sharp9: return Dominant.seventhSharp5Sharp9
-            
+        case .dominant7sharp9_13: return Dominant.seventhSharp9_13
+        case .dominant7flat9_13: return Dominant.seventhFlat9_13
+        case .dominant7flat9sharp9: return Dominant.seventhFlat9Sharp9
+        case .dominant7flat9sharp9sharp11: return Dominant.seventhFlat9Sharp9Sharp11
+        case .dominant7flat9sharp9flat13: return Dominant.seventhFlat9Sharp9Flat13
+        
         case .sus2: return Suspended.sus2
         case .sus4: return Suspended.sus4
             
@@ -315,9 +329,6 @@ struct ChordTemplates {
         case .augmented7: return AugmentedDiminished.augmentedSeventh
         case .diminished: return AugmentedDiminished.diminished
         case .diminished7: return AugmentedDiminished.diminishedSeventh
-        case .halfDiminished7: return AugmentedDiminished.halfDiminishedSeventh
-            
-        case .power: return Power.basic
         }
     }
 }
